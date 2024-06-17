@@ -3,7 +3,7 @@ name = "reparo"
 version = "0.1.0"
 edition = "2021"
 authors = ["Sho Kaneko <kanekoshoyu@gmail.com>"]
-description = "rewond events"
+description = "rewind events"
 repository = "https://github.com/kanekoshoyu/kucoin_arbitrage"
 license = "MIT"
 
