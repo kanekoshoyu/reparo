@@ -1,15 +1,30 @@
 use chrono::NaiveDateTime;
 use kanal::AsyncSender;
+use std::{
+    fs::File,
+    io::{Read, Write},
+};
 use tokio::time::{sleep_until, Duration, Instant};
 
 /// any event that is to be rewinded should be rewindable
-pub trait Rewindable {
+pub trait Rewindable: serde::Serialize + for<'d> serde::Deserialize<'d> {
     fn timestamp(&self) -> chrono::NaiveDateTime;
 }
 
-// TODO implement subscribe and store into file
+pub fn save_vec_to_file<T: Rewindable>(vec: &Vec<T>, file_path: &str) -> std::io::Result<()> {
+    let json_string = serde_json::to_string(vec)?;
+    let mut file = File::create(file_path)?;
+    file.write_all(json_string.as_bytes())?;
+    Ok(())
+}
 
-// TODO implement parse file
+pub fn load_vec_from_file<T: Rewindable>(file_path: &str) -> std::io::Result<Vec<T>> {
+    let mut file = File::open(file_path)?;
+    let mut json_string = String::new();
+    file.read_to_string(&mut json_string)?;
+    let vec = serde_json::from_str(&json_string)?;
+    Ok(vec)
+}
 
 /// pass iterator of the rewindable, and send to kanal::channel
 pub async fn rewind_broadcast<T: Rewindable>(
@@ -49,5 +64,26 @@ pub async fn wait_until_timestamp(time_target: NaiveDateTime) {
         let wait_duration = Duration::from_micros(wait_duration.num_microseconds().unwrap() as u64);
         let wait_until = Instant::now() + wait_duration;
         sleep_until(wait_until).await;
+    }
+}
+
+// TODO implement subscribe and store into file
+
+// TODO implement parse file unit test
+
+mod tests {
+    /// verify that the value can be read/write
+    #[tokio::test]
+    async fn test_write_read() {
+        // set up cache connection
+        struct TestStruct {
+            data: String,
+            timestamp: chrono::DateTime<chrono::Utc>,
+        }
+        let test_struct = TestStruct {
+            data: "Test".to_string(),
+            timestamp: chrono::Utc::now(),
+        };
+        //serialize
     }
 }
